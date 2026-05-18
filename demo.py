@@ -20,6 +20,7 @@ gr.TEMP_DIR = "tmp_gradio"
 from src.data.dataset import DatasetConfig, RigDatasetModule
 from src.data.transform import Transform
 from src.rig_package.info.mixamo_mapper import map_asset_to_mixamo
+from src.rig_package.info.ue5_mapper import map_asset_to_ue5
 from src.model.tokenrig import TokenRigResult
 from src.tokenizer.parse import get_tokenizer
 from src.server.spec import (
@@ -164,7 +165,7 @@ def run_rig(
     use_skeleton: bool,
     use_transfer: bool,
     use_postprocess: bool,
-    use_mixamo: bool,
+    bone_names: str,
     output_paths: List[Path],
     model_ckpt: str,
     hf_path: Optional[str],
@@ -235,8 +236,10 @@ def run_rig(
         asset = preds[0].asset
         assert asset is not None
 
-        if use_mixamo:
+        if bone_names == "mixamo":
             asset.joint_names = map_asset_to_mixamo(asset.joints, asset.parents)
+        elif bone_names == "ue5":
+            asset.joint_names = map_asset_to_ue5(asset.joints, asset.parents)
 
         if use_postprocess:
             voxel = asset.voxel(resolution=196)
@@ -307,7 +310,7 @@ def run_cli(args):
         args.use_skeleton,
         args.use_transfer,
         args.use_postprocess,
-        args.use_mixamo,
+        args.bone_names,
         outputs,
         args.model_ckpt,
         args.hf_path,
@@ -328,7 +331,7 @@ def run_gradio(
     model_ckpt,
     hf_path,
     export_format,
-    use_mixamo,
+    bone_names,
 ):
     if not files:
         return "Please upload at least one 3D model.", None
@@ -351,7 +354,7 @@ def run_gradio(
         use_skeleton,
         use_transfer,
         use_postprocess,
-        use_mixamo,
+        bone_names,
         outputs,
         model_ckpt,
         hf_path,
@@ -397,7 +400,12 @@ def launch_gradio():
             use_skeleton = gr.Checkbox(False, label="Use skeleton (only generate skin if skeleton exists)")
             use_transfer = gr.Checkbox(False, label="Use transfer (maintain texture)")
             use_postprocess = gr.Checkbox(False, label="Use postprocess (voxel skin)")
-            use_mixamo = gr.Checkbox(False, label="Use Mixamo bone names")
+            bone_names = gr.Dropdown(
+                choices=["articulated", "mixamo", "ue5"],
+                value="articulated",
+                label="Bone Naming Convention",
+                interactive=True,
+            )
             export_format = gr.Dropdown(
                 choices=["glb", "fbx", "obj"],
                 value="glb",
@@ -431,7 +439,7 @@ def launch_gradio():
                 model_ckpt,
                 hf_path,
                 export_format,
-                use_mixamo,
+                bone_names,
             ],
             outputs=[log, output],
         )
@@ -465,7 +473,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_skeleton", action="store_true")
     parser.add_argument("--use_transfer", action="store_true")
     parser.add_argument("--use_postprocess", action="store_true")
-    parser.add_argument("--use_mixamo", action="store_true", help="Use Mixamo bone names")
+    parser.add_argument("--bone_names", default="articulated", choices=["articulated", "mixamo", "ue5"], help="Bone naming convention")
 
     parser.add_argument("--model_ckpt", default=MODEL_CKPTS[0] if MODEL_CKPTS else "")
     parser.add_argument("--hf_path", default=None)

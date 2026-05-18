@@ -20,6 +20,7 @@ if current_dir not in sys.path:
 
 # SkinTokens internal imports
 from src.rig_package.info.mixamo_mapper import map_asset_to_mixamo
+from src.rig_package.info.ue5_mapper import map_asset_to_ue5
 from src.data.dataset import DatasetConfig, RigDatasetModule
 from src.data.transform import Transform
 from src.model.tokenrig import TokenRigResult
@@ -255,7 +256,7 @@ class SkinTokensGenerator:
                 "use_skeleton": ("BOOLEAN", {"default": False, "label_on": "Yes", "label_off": "No"}),
                 "use_transfer": ("BOOLEAN", {"default": True, "label_on": "Yes", "label_off": "No", "tooltip": "IMPORTANT: Set to 'Yes' to preserve textures, materials, and original mesh quality from your input file."}),
                 "use_postprocess": ("BOOLEAN", {"default": False, "label_on": "Yes", "label_off": "No"}),
-                "use_mixamo": ("BOOLEAN", {"default": False, "label_on": "Yes", "label_off": "No"}),
+                "bone_names": (["articulated", "mixamo", "ue5"], {"default": "articulated"}),
                 "output_format": ([".glb", ".fbx", ".obj"], {"default": ".glb"}),
                 "bpy_server_mode": (["Embedded (bpy)", "Headless (Blender)"], {"default": "Embedded (bpy)"}),
             }
@@ -267,7 +268,7 @@ class SkinTokensGenerator:
     CATEGORY = "SkinTokens"
     
     def generate(self, model, input_mesh, top_k, top_p, temperature, repetition_penalty, num_beams, 
-                 use_skeleton, use_transfer, use_postprocess, use_mixamo, output_format, bpy_server_mode):
+                 use_skeleton, use_transfer, use_postprocess, bone_names, output_format, bpy_server_mode):
         
         if not input_mesh:
             raise ValueError("No input mesh path provided.")
@@ -358,8 +359,10 @@ class SkinTokensGenerator:
             asset = preds[0].asset
             assert asset is not None
 
-            if use_mixamo:
+            if bone_names == "mixamo":
                 asset.joint_names = map_asset_to_mixamo(asset.joints, asset.parents)
+            elif bone_names == "ue5":
+                asset.joint_names = map_asset_to_ue5(asset.joints, asset.parents)
 
             if use_postprocess:
                 voxel = asset.voxel(resolution=196)

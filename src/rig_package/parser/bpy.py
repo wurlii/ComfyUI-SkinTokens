@@ -579,7 +579,12 @@ def make_asset(
     if len(bpy.data.armatures) > 0:
         armature = bpy.data.armatures[0]
         armature_name = armature.name
-        joint_names = [b.name for b in armature.bones]
+        if asset.joint_names is not None and len(asset.joint_names) == len(armature.bones):
+            for b, new_name in zip(armature.bones, asset.joint_names):
+                b.name = new_name
+            joint_names = asset.joint_names
+        else:
+            joint_names = [b.name for b in armature.bones]
     else:
         armature = None
         armature_name = 'Armature'
@@ -716,8 +721,9 @@ def make_asset(
             if not do_not_normalize:
                 vertex_group_reweight = vertex_group_reweight / vertex_group_reweight[..., :group_per_vertex].sum(axis=1)[...,None]
             # clean vertex groups first in case skin exists
+            ob.vertex_groups.clear()
             for name in joint_names:
-                ob.vertex_groups[name].remove(range(990))
+                ob.vertex_groups.new(name=name)
             for v, w in enumerate(skin):
                 for ii in range(group_per_vertex):
                     j = argsorted[v, ii]
