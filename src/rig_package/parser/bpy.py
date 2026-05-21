@@ -272,7 +272,16 @@ class BpyParser(AbstractParser):
 
             if asset.joints is not None and asset.matrix_basis is not None:
                 logging.warning("Exporting animation, but fbx format is deprecated because the rest pose will not be exported in bpy4.2. Use glb/gltf format instead. See: https://blender.stackexchange.com/questions/273398/blender-export-fbx-lose-the-origin-rest-pose.")
-            bpy.ops.export_scene.fbx(filepath=filepath, check_existing=False, add_leaf_bones=kwargs.get('add_leaf_bones', False), path_mode='COPY', embed_textures=True, mesh_smooth_type="FACE")
+            bpy.ops.export_scene.fbx(
+                filepath=filepath,
+                check_existing=False,
+                add_leaf_bones=kwargs.get('add_leaf_bones', False),
+                path_mode='COPY',
+                embed_textures=True,
+                mesh_smooth_type="FACE",
+                apply_unit_scale=True,
+                apply_scale_options='FBX_SCALE_ALL',
+            )
         elif ext == 'glb' or ext == 'gltf':
             bpy.ops.export_scene.gltf(filepath=filepath)
         elif ext == 'obj':
