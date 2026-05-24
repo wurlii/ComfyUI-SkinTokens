@@ -8,6 +8,7 @@ from typing import Dict, Optional, List, Tuple
 
 import io
 import os
+import sys
 from ..rig_package.info.asset import Asset
 try:
     from ..model.tokenrig import TokenRig

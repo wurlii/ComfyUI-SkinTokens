@@ -2,22 +2,15 @@ from collections import defaultdict
 from numpy import ndarray
 from typing import Optional, Tuple
 
-try:
-    import bpy # type: ignore
-except ImportError:
-    bpy = None
+import bpy # type: ignore
 import logging
 import numpy as np
 import os
-import sys
 import trimesh
 
 from .abstract import AbstractParser
 from ..info.asset import Asset
-try:
-    from mathutils import Vector, Matrix # type: ignore
-except ImportError:
-    Vector = Matrix = any
+from mathutils import Vector, Matrix # type: ignore
 
 class BpyParser(AbstractParser):
     
@@ -105,10 +98,10 @@ class BpyParser(AbstractParser):
             add_leaf_bones: bool=False, if True, add a leaf bone at the end of each bone.
         """
         ext = os.path.splitext(filepath)[1].lower()
-        if ext == '.ply':
-            cls.export_ply(asset, filepath, **kwargs)
-        elif ext == '.obj' and kwargs.get('use_manual_obj', False):
+        if ext == '.obj':
             cls.export_obj(asset, filepath, **kwargs)
+        elif ext == 'ply':
+            cls.export_ply(asset, filepath, **kwargs)
         else:
             cls.export_asset(asset, filepath, **kwargs)
     
@@ -220,75 +213,19 @@ class BpyParser(AbstractParser):
     @classmethod
     def export_asset(cls, asset: Asset, filepath: str, **kwargs):
         use_origin = kwargs.pop('use_origin', False) if 'use_origin' in kwargs else False
-        # Root Cause Fix: DO NOT clean_bpy here. 
-        # We need to preserve the images loaded during the 'load()' phase.
+        if not use_origin:
+            clean_bpy()
         make_asset(asset=asset, **kwargs)
         cls._safe_make_dir(filepath)
         
         _, ext = os.path.splitext(filepath)
         ext = ext.lower()[1:]
         if ext == 'fbx':
-            filepath = os.path.abspath(filepath)
-            output_dir = os.path.dirname(filepath)
-            model_basename = os.path.basename(filepath).replace(".fbx", "")
-            
-            # Create a dedicated .fbm folder for organization
-            fbm_dir = os.path.join(output_dir, f"{model_basename}.fbm")
-            os.makedirs(fbm_dir, exist_ok=True)
-            print(f"[FBX EXPORT] Organizing textures into: {fbm_dir}")
-            
-            # Find ALL images, including those hidden in materials
-            images_to_save = set(bpy.data.images)
-            for mat in bpy.data.materials:
-                if mat.use_nodes:
-                    for node in mat.node_tree.nodes:
-                        if node.type == 'TEX_IMAGE' and node.image:
-                            images_to_save.add(node.image)
-            
-            for img in images_to_save:
-                try:
-                    # Use a clean name inside the .fbm folder
-                    clean_img_name = img.name.replace(".", "_").lower()
-                    fallback_filename = f"{clean_img_name}.png"
-                    img_path = os.path.join(fbm_dir, fallback_filename)
-                    
-                    if not img.has_data:
-                        try:
-                            _ = img.pixels[0]
-                        except:
-                            continue
-
-                    img.file_format = 'PNG'
-                    try:
-                        img.save_render(img_path)
-                    except:
-                        img.save(filepath=img_path)
-                        
-                    if os.path.exists(img_path):
-                        print(f"[FBX EXPORT] SUCCESS: Saved to .fbm/{fallback_filename}")
-                except Exception as e:
-                    print(f"[FBX EXPORT] Failed to save {img.name}: {e}")
-            sys.stdout.flush()
-
             if asset.joints is not None and asset.matrix_basis is not None:
                 logging.warning("Exporting animation, but fbx format is deprecated because the rest pose will not be exported in bpy4.2. Use glb/gltf format instead. See: https://blender.stackexchange.com/questions/273398/blender-export-fbx-lose-the-origin-rest-pose.")
-            bpy.ops.export_scene.fbx(
-                filepath=filepath,
-                check_existing=False,
-                add_leaf_bones=kwargs.get('add_leaf_bones', False),
-                path_mode='COPY',
-                embed_textures=True,
-                mesh_smooth_type="FACE",
-                apply_unit_scale=True,
-                apply_scale_options='FBX_SCALE_ALL',
-            )
+            bpy.ops.export_scene.fbx(filepath=filepath, check_existing=False, add_leaf_bones=kwargs.get('add_leaf_bones', False), path_mode='COPY', embed_textures=True, mesh_smooth_type="FACE")
         elif ext == 'glb' or ext == 'gltf':
             bpy.ops.export_scene.gltf(filepath=filepath)
-        elif ext == 'obj':
-            if hasattr(bpy.ops.wm, "obj_export"):
-                bpy.ops.wm.obj_export(filepath=filepath)
-            else:
-                bpy.ops.export_scene.obj(filepath=filepath, use_selection=False)
         else:
             raise ValueError(f"Unsupported format: {ext}")
     
@@ -313,8 +250,8 @@ def clean_bpy():
         bpy.data.objects,
         bpy.data.worlds,
         bpy.data.node_groups,
-        # Root Cause Fix: Do NOT clean images/textures here.
-        # We need them to persist from the GLB load to the FBX export.
+        bpy.data.images,
+        bpy.data.textures,
     ]
     for data_collection in data_types:
         for item in data_collection:
@@ -588,12 +525,7 @@ def make_asset(
     if len(bpy.data.armatures) > 0:
         armature = bpy.data.armatures[0]
         armature_name = armature.name
-        if asset.joint_names is not None and len(asset.joint_names) == len(armature.bones):
-            for b, new_name in zip(armature.bones, asset.joint_names):
-                b.name = new_name
-            joint_names = asset.joint_names
-        else:
-            joint_names = [b.name for b in armature.bones]
+        joint_names = [b.name for b in armature.bones]
     else:
         armature = None
         armature_name = 'Armature'
@@ -697,13 +629,6 @@ def make_asset(
                 continue
             pname = joint_names[u] if asset.parents[u] == -1 else joint_names[asset.parents[u]]
             extrude_bone(edit_bones, joint_names[u], pname, joints[u], tails[u])
-            
-        is_mixamo = any("mixamorig:" in name for name in joint_names)
-        if is_mixamo:
-            for bone in edit_bones:
-                bone.select = True
-            bpy.ops.armature.calculate_roll(type='GLOBAL_NEG_Y')
-            
         bpy.ops.object.mode_set(mode='OBJECT')
     
     # 3. if there is skin, set vertex groups
@@ -730,9 +655,8 @@ def make_asset(
             if not do_not_normalize:
                 vertex_group_reweight = vertex_group_reweight / vertex_group_reweight[..., :group_per_vertex].sum(axis=1)[...,None]
             # clean vertex groups first in case skin exists
-            ob.vertex_groups.clear()
             for name in joint_names:
-                ob.vertex_groups.new(name=name)
+                ob.vertex_groups[name].remove(range(990))
             for v, w in enumerate(skin):
                 for ii in range(group_per_vertex):
                     j = argsorted[v, ii]
