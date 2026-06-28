@@ -3,7 +3,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from src.rig_package.parser.bpy import BpyParser
 import numpy as np
 
-asset = BpyParser.load(filepath="/home/aero/Downloads/Mixamo/res_2.fbx")
+filepath = os.path.join(os.path.expanduser("~"), "Downloads", "Mixamo", "res_2.fbx")
+asset = BpyParser.load(filepath=filepath)
 joints = asset.joints
 parents = asset.parents
 

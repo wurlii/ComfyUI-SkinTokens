@@ -4,7 +4,11 @@ import os
 
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    fbx_path = "/home/aero/comfy/ComfyUI/input/3d/manny--unreal--engine-5/source/Manny_Unreal_Engine_5.fbx"
+    cur_file = os.path.abspath(__file__)
+    repo_root = os.path.dirname(os.path.dirname(cur_file))
+    comfy_root = os.path.dirname(os.path.dirname(repo_root))
+    
+    fbx_path = os.path.join(comfy_root, "input", "3d", "manny--unreal--engine-5", "source", "Manny_Unreal_Engine_5.fbx")
     try:
         bpy.ops.import_scene.fbx(filepath=fbx_path)
     except Exception as e:
@@ -17,7 +21,7 @@ def main():
         sys.exit(1)
         
     armature = armatures[0]
-    out_file = "/home/aero/comfy/ComfyUI/custom_nodes/ComfyUI-SkinTokens/test_scripts/manny_bones.txt"
+    out_file = os.path.join(repo_root, "test_scripts", "manny_bones.txt")
     
     with open(out_file, "w") as f:
         f.write(f"Armature name: {armature.name}\n")

@@ -77,7 +77,7 @@ class TokenRig(ModelSpec):
         self.skin_warmup_start_epoch: int = cfg.get('skin_warmup_start_epoch', 0)
         self.skin_warmup_end_epoch: int = cfg.get('skin_warmup_end_epoch', -1)
 
-        self.vae = SkinVAEModel.load_from_system_checkpoint("/home/aero/comfy/ComfyUI/models/skintoken/experiments/skin_vae_2_10_32768/last.ckpt").to(torch.bfloat16)
+        self.vae = SkinVAEModel.load_from_system_checkpoint("experiments/skin_vae_2_10_32768/last.ckpt").to(torch.bfloat16)
         for param in self.vae.parameters():
             param.requires_grad_(False)
         self.vae.eval()

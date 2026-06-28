@@ -35,7 +35,7 @@ def test_mapper(fbx_path):
         print(f"{orig:<20} | {mapped:<30} | {parent_idx:<15}")
 
     asset.joint_names = mapped_names
-    out_path = "/home/aero/Downloads/Mixamo/res_2_mixamo.fbx"
+    out_path = os.path.join(os.path.expanduser("~"), "Downloads", "Mixamo", "res_2_mixamo.fbx")
     print(f"\nExporting to {out_path}...")
     try:
         BpyParser.export_asset(asset, out_path)
@@ -44,5 +44,5 @@ def test_mapper(fbx_path):
         print(f"Failed to export. Error: {e}")
 
 if __name__ == "__main__":
-    test_file = "/home/aero/Downloads/Mixamo/res_2.fbx"
+    test_file = os.path.join(os.path.expanduser("~"), "Downloads", "Mixamo", "res_2.fbx")
     test_mapper(test_file)

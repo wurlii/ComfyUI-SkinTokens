@@ -87,7 +87,16 @@ class ModelSpec(pl.LightningModule, ABC):
                 import folder_paths
                 checkpoint_path = os.path.join(folder_paths.models_dir, "skintoken", checkpoint_path)
             except ImportError:
-                pass
+                cur_file = os.path.abspath(__file__)
+                repo_root = os.path.dirname(os.path.dirname(os.path.dirname(cur_file)))
+                comfy_root = os.path.dirname(os.path.dirname(repo_root))
+                candidate_path = os.path.join(comfy_root, "models", "skintoken", checkpoint_path)
+                if os.path.exists(candidate_path):
+                    checkpoint_path = candidate_path
+                else:
+                    repo_models_path = os.path.join(repo_root, "models", "skintoken", checkpoint_path)
+                    if os.path.exists(repo_models_path):
+                        checkpoint_path = repo_models_path
                 
         ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
         state_dict = ckpt['state_dict']

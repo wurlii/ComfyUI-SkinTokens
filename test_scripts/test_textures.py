@@ -67,8 +67,11 @@ def test_texture_preservation(input_path, output_format=".glb"):
         print("\n[Step 3] Error: Output file was not created.")
 
 if __name__ == "__main__":
-    # Change this to a path that exists on your system for testing
-    test_file = "/home/aero/comfy/ComfyUI/input/3d/Baby Groot.fbx"
+    import os
+    cur_file = os.path.abspath(__file__)
+    repo_root = os.path.dirname(os.path.dirname(cur_file))
+    comfy_root = os.path.dirname(os.path.dirname(repo_root))
+    test_file = os.path.join(comfy_root, "input", "3d", "Baby Groot.fbx")
     
     if len(sys.argv) > 1:
         test_file = sys.argv[1]

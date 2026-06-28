@@ -31,8 +31,19 @@ from src.server.spec import (
 )
 from src.data.vertex_group import voxel_skin
 
+def get_default_ckpt():
+    import os
+    try:
+        import folder_paths
+        skintoken_models_dir = os.path.join(folder_paths.models_dir, "skintoken")
+    except ImportError:
+        cur_file = os.path.abspath(__file__)
+        comfy_root = os.path.dirname(os.path.dirname(os.path.dirname(cur_file)))
+        skintoken_models_dir = os.path.join(comfy_root, "models", "skintoken")
+    return os.path.join(skintoken_models_dir, "experiments/articulation_xl_quantization_256_token_4/grpo_1400.ckpt")
+
 MODEL_CKPTS = [
-    "/home/aero/comfy/ComfyUI/models/skintoken/experiments/articulation_xl_quantization_256_token_4/grpo_1400.ckpt",
+    get_default_ckpt(),
 ]
 
 HF_PATHS = [

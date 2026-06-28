@@ -82,7 +82,7 @@
         "Node name for S&R": "SkinTokensLoadMesh"
       },
       "widgets_values": [
-        "/home/aero/comfy/ComfyUI/output/drgonnormal_rigged_1778502256.fbx"
+        "drgonnormal_rigged_1778502256.fbx"
       ]
     },
     {

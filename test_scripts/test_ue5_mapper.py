@@ -57,5 +57,9 @@ def test_ue5_mapper(fbx_path):
     print(f"Analysis complete. Matches: {matches}, Mismatches: {mismatches}")
 
 if __name__ == "__main__":
-    test_file = "/home/aero/comfy/ComfyUI/input/3d/manny--unreal--engine-5/source/Manny_Unreal_Engine_5.fbx"
+    import os
+    cur_file = os.path.abspath(__file__)
+    repo_root = os.path.dirname(os.path.dirname(cur_file))
+    comfy_root = os.path.dirname(os.path.dirname(repo_root))
+    test_file = os.path.join(comfy_root, "input", "3d", "manny--unreal--engine-5", "source", "Manny_Unreal_Engine_5.fbx")
     test_ue5_mapper(test_file)
