@@ -7,53 +7,64 @@ const ERR = (...args) => console.error("[SkinTokens]", ...args);
 
 // Load Three.js and dependencies dynamically from CDN
 async function loadThreeJS() {
-    if (window.THREE) {
-        LOG("Three.js already loaded, skipping.");
-        return;
-    }
+    try {
+        if (!window.THREE) {
+            LOG("Loading Three.js r128 from CDN...");
+            await loadScript("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js");
+            LOG("Three.js core loaded.");
+        } else {
+            LOG("Three.js already loaded. Verifying loaders...");
+        }
 
-    LOG("Loading Three.js r128 from CDN...");
-    return new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
-        script.onload = async () => {
-            LOG("Three.js core loaded. Loading extensions...");
+        if (!THREE.GLTFLoader) {
             await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js");
-            LOG("  ✓ GLTFLoader");
+            LOG("  ✓ GLTFLoader loaded");
+        }
+
+        if (!THREE.OBJLoader) {
             await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js");
-            LOG("  ✓ OBJLoader");
+            LOG("  ✓ OBJLoader loaded");
+        }
+
+        if (!THREE.MTLLoader) {
             await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js");
-            LOG("  ✓ MTLLoader");
+            LOG("  ✓ MTLLoader loaded");
+        }
+
+        if (!window.fflate) {
             await loadScript("https://cdn.jsdelivr.net/npm/fflate@0.8.0/umd/index.js");
-            LOG("  ✓ fflate (FBX dependency)");
-            // Upgrade FBXLoader to r147 (latest non-module version) to fix embedded texture bugs
+            LOG("  ✓ fflate loaded");
+        }
+
+        if (!THREE.FBXLoader) {
             await loadScript("https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/FBXLoader.js");
-            LOG("  ✓ FBXLoader (r147)");
+            LOG("  ✓ FBXLoader (r147) loaded");
 
             // HACK: Force FBXLoader to recognize Blender's sanitized names (like Image_0_png) 
             // as valid embedded textures so it doesn't fall back to 404 URLs.
-            const originalParse = THREE.FBXLoader.prototype.parse;
-            THREE.FBXLoader.prototype.parse = function (data, path) {
-                const result = originalParse.call(this, data, path);
-                LOG("FBX Hack: Applied sanitized extension support.");
-                return result;
-            };
-
-            await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/TGALoader.js");
-            if (!THREE.TGALoader) {
-                WARN("THREE.TGALoader not found after script load. Attempting legacy fallback...");
-                if (window.TGALoader) THREE.TGALoader = window.TGALoader;
+            if (THREE.FBXLoader && THREE.FBXLoader.prototype) {
+                const originalParse = THREE.FBXLoader.prototype.parse;
+                THREE.FBXLoader.prototype.parse = function (data, path) {
+                    const result = originalParse.call(this, data, path);
+                    LOG("FBX Hack: Applied sanitized extension support.");
+                    return result;
+                };
             }
-            LOG("  ✓ TGALoader");
-            LOG("All Three.js dependencies loaded.");
-            resolve();
-        };
-        script.onerror = (e) => {
-            ERR("Failed to load Three.js core!", e);
-            reject(e);
-        };
-        document.head.appendChild(script);
-    });
+        }
+
+        if (!THREE.TGALoader) {
+            await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/TGALoader.js");
+            if (!THREE.TGALoader && window.TGALoader) {
+                THREE.TGALoader = window.TGALoader;
+            }
+            LOG("  ✓ TGALoader loaded");
+        }
+
+        LOG("All Three.js dependencies verified/loaded.");
+    } catch (e) {
+        ERR("Failed to load Three.js dependencies!", e);
+        throw e;
+    }
 }
 
 function loadScript(src) {
