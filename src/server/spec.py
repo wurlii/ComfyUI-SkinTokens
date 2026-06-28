@@ -2,7 +2,7 @@ from dataclasses import dataclass
 try:
     import torch
     from torch import Tensor
-except ImportError:
+except (ImportError, OSError):
     Tensor = any # Fallback for environments without torch
 from typing import Dict, Optional, List, Tuple
 
@@ -12,7 +12,7 @@ import sys
 from ..rig_package.info.asset import Asset
 try:
     from ..model.tokenrig import TokenRig
-except ImportError:
+except (ImportError, OSError):
     TokenRig = any
 
 PORT = 59875

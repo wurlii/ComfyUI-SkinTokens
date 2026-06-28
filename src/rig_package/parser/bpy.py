@@ -587,13 +587,16 @@ def make_asset(
         if root_tail is False:
             tails[root_id] = joints[root_id] + np.array([0., 0., length])
         bpy.ops.object.armature_add(enter_editmode=True)
-        armature = bpy.data.armatures.get('Armature')
-        armature_name = asset.armature_name if asset.armature_name is not None else 'Armature'
+        armature_obj = bpy.context.active_object
+        if asset.armature_name is not None:
+            armature_obj.name = asset.armature_name
+        armature_name = armature_obj.name
+        armature = armature_obj.data
         
         edit_bones = armature.edit_bones
         
         if add_root:
-            bone_root = edit_bones.get('Bone')
+            bone_root = edit_bones[0]
             root_name = 'Root'
             x = 0
             while root_name in joint_names:
@@ -602,7 +605,7 @@ def make_asset(
             bone_root.name = root_name
             bone_root.tail = Vector((joints[0, 0], joints[0, 1], joints[0, 2]))
         else:
-            bone_root = edit_bones.get('Bone')
+            bone_root = edit_bones[0]
             bone_root.name = joint_names[0]
             bone_root.head = Vector((joints[0, 0], joints[0, 1], joints[0, 2]))
             bone_root.tail = Vector((tails[0, 0], tails[0, 1], tails[0, 2]))

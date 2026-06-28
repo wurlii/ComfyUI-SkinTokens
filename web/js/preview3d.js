@@ -5,7 +5,6 @@ const LOG = (...args) => console.log("[SkinTokens]", ...args);
 const WARN = (...args) => console.warn("[SkinTokens]", ...args);
 const ERR = (...args) => console.error("[SkinTokens]", ...args);
 
-// Load Three.js and dependencies dynamically from CDN
 async function loadThreeJS() {
     try {
         if (!window.THREE) {
@@ -654,7 +653,7 @@ app.registerExtension({
                     if (url.includes('view?filename=')) return url;
 
                     const isTexture = /\.(png|jpg|jpeg|tga|dds|bmp)$/i.test(url) || url.includes('_png') || url.includes('_jpg');
-                    const isFBM = url.includes('.fbm/') || url.includes('/textures/');
+                    const isFBM = url.includes('.fbm') || url.includes('/textures/');
 
                     if (isTexture || isFBM) {
                         let filename = url.split('/').pop().toLowerCase();
